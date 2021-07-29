@@ -717,12 +717,7 @@ pub const Device = opaque
         return objc.mtl_device_get_max_buffer_length(self);
     }
 
-    pub fn get_max_buffer_length(self: *Self) NS.UInteger
-    {
-        return objc.mtl_device_get_max_buffer_length(self);
-    }
-
-    pub fn new_buffer(self: *Self) ?*Buffer
+    pub fn new_buffer(self: *Self, length: NS.UInteger, options: Resource.Options) ?*Buffer
     {
         return objc.mtl_device_new_buffer(self, length, options);
     }
@@ -749,7 +744,7 @@ pub const Device = opaque
 
     pub fn new_library_from_source(self: *Self, source: []const u8, compile_options: *CompileOptions, err: **NS.Error) ?*Library
     {
-        return objc.mtl_device_new_library_from_source(self, NS.String.new(filepath.ptr), ns_error);
+        return objc.mtl_device_new_library_from_source(self, NS.String.new(source.ptr), compile_options, err);
     }
 
     pub fn new_event(self: *Self) ?*Event
@@ -834,7 +829,7 @@ pub const Library = opaque
 
 pub const Layer = opaque
 {
-    const Self: @This();
+    const Self = @This();
 
     pub fn set_device(self: *Self, device: *Device) void
     {
@@ -849,7 +844,7 @@ pub const Layer = opaque
 
 pub const CompileOptions = opaque
 {
-    const Self: @This();
+    const Self = @This();
 
     pub fn new() ?*CompileOptions
     {
@@ -879,7 +874,7 @@ pub const CompileOptions = opaque
 
 pub const Attribute = opaque
 {
-    const Self: @This();
+    const Self = @This();
 
     pub fn get_name(self: *Self) [*:0]u8
     {
@@ -916,7 +911,7 @@ pub const VertexAttribute = Attribute;
 
 //pub const VertexAttribute = opaque
 //{
-    //const Self: @This();
+    //const Self = @This();
 
     //pub fn get_name(self: *Self) [*:0]u8
     //{
@@ -1033,12 +1028,12 @@ pub const ComputePipeline = opaque
 
         fn new_from_reflection(device: *Device, function: *Function, options: PipelineOption, reflection: *ComputePipeline.Reflection, err: *NS.Error) ?*Self
         {
-            return objc.mtl_compute_pipeline_new_from_function(device, function, options, reflection, err);
+            return objc.mtl_compute_pipeline_new_from_reflection(device, function, options, reflection, err);
         }
 
         fn new_from_descriptor(device: *Device, descriptor: *ComputePipeline.Descriptor, options: PipelineOption, reflection: *ComputePipeline.Reflection, err: *NS.Error) ?*Self
         {
-            return objc.mtl_compute_pipeline_new_from_function(device, function, options, reflection, err);
+            return objc.mtl_compute_pipeline_new_from_descriptor(device, descriptor, options, reflection, err);
         }
 
         pub fn get_device(self: *Self) ?*Device
@@ -1106,7 +1101,7 @@ pub const Buffer = opaque
 
     pub fn add_debug_marker_range(self: *Self, name: [*:0]u8, range: NS.Range) void
     {
-        objc.mtl_add_debug_marker_range(self, range);
+        objc.mtl_add_debug_marker_range(self, name, range);
     }
 
     pub fn remove_all_debug_markers(self: *Self) void
@@ -1114,12 +1109,12 @@ pub const Buffer = opaque
         objc.mtl_buffer_remove_all_debug_markers(self);
     }
 
-    pub fn new_remote_buffer_view_for_device(buffer: *Self, device: *Device) ?*Self
+    pub fn new_remote_buffer_view_for_device(self: *Self, device: *Device) ?*Self
     {
-        return objc.mtl_buffer_new_view_for_device(self);
+        return objc.mtl_buffer_new_view_for_device(self, device);
     }
 
-    pub fn new_remote_storage_buffer(buffer: *Self) ?*Self
+    pub fn new_remote_storage_buffer(self: *Self) ?*Self
     {
         return objc.mtl_buffer_new_remote_storage_buffer(self);
     }
@@ -1243,7 +1238,7 @@ pub const Heap = opaque
 
         pub fn set_CPU_cache_mode(self: *Self, cpu_cache_mode: CPUCacheMode) void
         {
-            objc.mtl_heap_descriptor_set_cpu_cache_mode(self, storage_mode);
+            objc.mtl_heap_descriptor_set_cpu_cache_mode(self, cpu_cache_mode);
         }
 
         pub fn get_hazard_tracking_mode(self: *Self) HazardTrackingMode
@@ -1387,69 +1382,67 @@ pub const RenderPipeline = opaque
 
 pub const Argument = opaque
 {
-    const Self = @This();
-
-    pub fn get_name(self: *Self) ?[*:0]u8
+    pub fn get_name(self: *Argument) ?[*:0]u8
     {
         return objc.mtl_argument_get_name(self);
     }
 
-    pub fn is_active(self: *Self) bool
+    pub fn is_active(self: *Argument) bool
     {
         return objc.mtl_argument_is_active(self);
     }
 
-    pub fn get_index(self: *Self) NS.UInteger
+    pub fn get_index(self: *Argument) NS.UInteger
     {
         return objc.mtl_argument_get_index(self);
     }
 
-    pub fn get_type(self: *Self) Argument.Type
+    pub fn get_type(self: *Argument) Argument.Type
     {
         return objc.mtl_argument_get_type(self);
     }
 
-    pub fn get_access(self: *Self) Argument.Access
+    pub fn get_access(self: *Argument) Argument.Access
     {
         return objc.mtl_argument_get_access(self);
     }
 
-    pub fn get_buffer_alignment(self: *Self) NS.UInteger
+    pub fn get_buffer_alignment(self: *Argument) NS.UInteger
     {
         return objc.mtl_argument_get_buffer_alignment(self);
     }
 
-    pub fn get_buffer_data_size(self: *Self) NS.UInteger
+    pub fn get_buffer_data_size(self: *Argument) NS.UInteger
     {
         return objc.mtl_argument_get_buffer_data_size(self);
     }
 
-    pub fn get_buffer_data_type(self: *Self) DataType
+    pub fn get_buffer_data_type(self: *Argument) DataType
     {
         return objc.mtl_argument_get_buffer_data_type(self);
     }
 
-    pub fn get_buffer_struct_type(self: *Self) StructType
+    pub fn get_buffer_struct_type(self: *Argument) StructType
     {
         return objc.mtl_argument_get_buffer_struct_type(self);
     }
 
-    pub fn get_buffer_pointer_type(self: *Self) PointerType
+    pub fn get_buffer_pointer_type(self: *Argument) PointerType
     {
         return objc.mtl_argument_get_buffer_pointer_type(self);
     }
 
-    pub fn get_array_length(self: *Self) NS.UInteger
+    pub fn get_array_length(self: *Argument) NS.UInteger
     {
         return objc.mtl_argument_get_array_length(self);
     }
 
-    pub fn get_thread_group_memory_alignment(self: *Self) NS.UInteger
+    pub fn get_thread_group_memory_alignment(self: *Argument) NS.UInteger
     {
         return objc.mtl_argument_get_thread_group_memory_alignment(self);
     }
 
-    pub fn get_thread_group_memory_data_size(self: *Self) NS.UInteger
+    pub fn get_thread_group_memory_data_size(self: *Argument) NS.UInteger
     {
         return objc.mtl_argument_get_thread_group_memory_data_size(self);
     }
@@ -1764,10 +1757,6 @@ pub const Render = opaque
         {
             objc.mtl_render_descriptor_set_sample_count(self, sample_count);
         }
-        pub fn set_stencil_pixel_format(self: *Self, pixel_format: PixelFormat) void
-        {
-            objc.mtl_render_descriptor_set_stencil_pixel_format(self, pixel_format);
-        }
     };
 
     pub const PassDescriptor = opaque
@@ -1982,7 +1971,7 @@ pub const CommandEncoder = opaque
 
     pub fn end(self: *Self) void
     {
-        objc.mtl_command_encoder_end();
+        objc.mtl_command_encoder_end(self);
     }
 
     pub fn get_device(self: *Self) ?*Device
@@ -2136,12 +2125,12 @@ pub const ComputeCommandEncoder = opaque
 
     pub fn set_sampler_state_at_index(self: *Self, sampler_state: *SamplerState, index: NS.UInteger) void
     {
-        objc.mtl_compute_command_encoder_set_sampler_state_at_index(self, sample_state, index);
+        objc.mtl_compute_command_encoder_set_sampler_state_at_index(self, sampler_state, index);
     }
 
     pub fn set_sampler_states_with_range(self: *Self, sampler_states: [*]*SamplerState, range: NS.Range) void
     {
-        objc.mtl_compute_command_encoder_set_sampler_states_with_range(self, sample_states, range);
+        objc.mtl_compute_command_encoder_set_sampler_states_with_range(self, sampler_states, range);
     }
 
     pub fn set_sampler_state_LOD_min_clamp_LOD_max_clamp_at_index(self: *Self, sampler_state: *SamplerState, LOD_min_clamp: f32, LOD_max_clamp: f32, index: NS.UInteger) void
@@ -2229,3 +2218,85 @@ pub const ComputeCommandEncoder = opaque
         objc.mtl_compute_command_encoder_execute_command_in_buffer(self, resources.ptr, resources.len);
     }
 };
+
+pub const RenderCommandEncoder = opaque
+{
+    const Self = @This();
+
+    pub fn new(command_buffer: *CommandBuffer, render_pass_descriptor: *Render.PassDescriptor) ?*Self
+    {
+        return objc.mtl_render_command_encoder_new(command_buffer, render_pass_descriptor);
+    }
+
+    pub fn set_front_face(self: *Self, winding: Winding) void
+    {
+        objc.mtl_render_command_encoder_set_front_face(self, winding);
+    }
+    
+    pub fn set_cull_mode(self: *Self, cull_mode: CullMode) void
+    {
+        objc.mtl_render_command_encoder_set_cull_mode(self, cull_mode);
+    }
+
+    pub fn set_viewport(self: *Self, viewport: *Viewport) void
+    {
+        objc.mtl_render_command_encoder_set_viewport(self, viewport);
+    }
+
+    pub fn set_render_pipeline(self: *Self, render_pipeline: *RenderPipeline) void
+    {
+        objc.mtl_render_command_encoder_set_pipeline(self, render_pipeline);
+    }
+
+    pub fn set_depth_stencil(self: *Self, depth_stencil_state: *DepthStencil.State) void
+    {
+        objc.mtl_render_command_encoder_set_depth_stencil_state(self, depth_stencil_state);
+    }
+
+    pub fn set_vertex_bytes_at_index(self: *Self, bytes: []const u8, index: u32) void
+    {
+        objc.mtl_render_command_set_vertex_bytes_at_index(self, bytes.ptr, bytes.len, index);
+    }
+
+    pub fn set_vertex_buffer(self: *Self, buffer: *Buffer, buffer_offset: NS.UInteger, index: u32) void
+    {
+        objc.mtl_render_command_encoder_set_vertex_buffer(self, buffer, buffer_offset, index);
+    }
+
+    pub fn set_fragment_buffer(self: *Self, buffer: *Buffer, buffer_offset: NS.UInteger, index: u32) void
+    {
+        objc.mtl_render_command_encoder_set_fragment_buffer(self, buffer, buffer_offset, index);
+    }
+
+    pub fn draw_primitives(self: *Self, primitive_type: PrimitiveType, primitive_start: Size, primitive_count: Size) void
+    {
+        objc.mtl_render_command_encoder_draw_primitives(self, primitive_type, primitive_start, primitive_count);
+    }
+
+    pub fn draw_indexed_primitives(self: *Self, primitive_type: PrimitiveType, index_count: u32, index_type: IndexType, index_buffer: *Buffer, index_buffer_offset: u32) void
+    {
+        objc.mtl_render_command_encoder_draw_indexed_primitives(self, primitive_type, index_count, index_type, index_buffer, index_buffer_offset);
+    }
+
+    pub fn set_texture_at_index(self: *Self, texture: *Texture, index: NS.UInteger) void
+    {
+        objc.mtl_render_command_encoder_set_texture_at_index(self, texture, index);
+    }
+};
+
+pub const CommandQueue = opaque
+{
+    const Self = @This();
+
+    pub fn new(device: *Device) ?*Self
+    {
+        return objc.mtl_command_queue_new(device);
+    }
+
+    pub fn new_with_command_buffer_count(device: *Device, command_buffer_count: NS.UInteger) ?*Self
+    {
+        return objc.mtl_command_queue_new_with_command_buffer_count(device, command_buffer_count);
+    }
+};
+
+
