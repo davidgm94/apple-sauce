@@ -1,5 +1,7 @@
 const std = @import("std");
-const NS = @import("apple_glue/ns.zig");
+pub const NS = @import("apple_glue/ns.zig");
+pub const CA = @import("apple_glue/ca.zig");
+pub const CG = @import("apple_glue/cg.zig");
 pub const objc = @import("apple_glue/objc.zig");
 
 pub const Size = extern struct
@@ -304,12 +306,6 @@ pub const TriangleTessellationFactorsHalf = extern struct
 {
     edge_tessellation_factor: [3]u16,
     inside_tessellation_factor: u16,
-};
-
-pub const RenderStage = enum(u32)
-{
-    vertex = 1 << 0,
-    fragment = 1 << 1,
 };
 
 pub const LoadAction = enum(u32)
@@ -737,14 +733,14 @@ pub const Device = opaque
         return objc.mtl_device_new_default_library(self);
     }
 
-    pub fn new_library_from_file(self: *Self, filepath: []const u8, ns_error: *NS.Error) ?*Library
+    pub fn new_library_from_file(self: *Self, filepath: []const u8, ns_error: *?*NS.Error) ?*Library
     {
         return objc.mtl_device_new_library_from_file(self, NS.String.new(filepath.ptr), ns_error);
     }
 
-    pub fn new_library_from_source(self: *Self, source: []const u8, compile_options: *CompileOptions, err: **NS.Error) ?*Library
+    pub fn new_library_from_source(self: *Self, source: [:0]const u8, compile_options: *CompileOptions, err: *?*NS.Error) ?*Library
     {
-        return objc.mtl_device_new_library_from_source(self, NS.String.new(source.ptr), compile_options, err);
+        return objc.mtl_library_new_from_source(self, source.ptr, compile_options, err);
     }
 
     pub fn new_event(self: *Self) ?*Event
@@ -828,21 +824,6 @@ pub const Library = opaque
     pub fn get_function_names(self: *Device) ?*?[*:0]u8
     {
         return objc.library_get_function_names(self);
-    }
-};
-
-pub const Layer = opaque
-{
-    const Self = @This();
-
-    pub fn set_device(self: *Self, device: *Device) void
-    {
-        return objc.mtl_layer_set_device(self, device);
-    }
-
-    pub fn set_pixel_format(self: *Self, pixel_format: PixelFormat) void
-    {
-        return objc.mtl_layer_set_pixel_format(self, pixel_format);
     }
 };
 
@@ -958,7 +939,7 @@ pub const Function = opaque
         return objc.mtl_function_new(library, name.ptr);
     }
 
-    pub fn new_from_existent(library: *Library, name: [:0]const u8, constant_values: *Function.ConstantValues, err: *NS.Error) ?*Self
+    pub fn new_from_existent(library: *Library, name: [:0]const u8, constant_values: *Function.ConstantValues, err: *?*NS.Error) ?*Self
     {
         return objc.mtl_function_new_from_existent(library, name.ptr, constant_values, err);
     }
@@ -1025,17 +1006,17 @@ pub const ComputePipeline = opaque
     {
         const Self = @This();
 
-        fn new_from_function(device: *Device, function: *Function, err: *NS.Error) ?*Self
+        fn new_from_function(device: *Device, function: *Function, err: *?*NS.Error) ?*Self
         {
             return objc.mtl_compute_pipeline_new_from_function(device, function, err);
         }
 
-        fn new_from_reflection(device: *Device, function: *Function, options: PipelineOption, reflection: *ComputePipeline.Reflection, err: *NS.Error) ?*Self
+        fn new_from_reflection(device: *Device, function: *Function, options: PipelineOption, reflection: *ComputePipeline.Reflection, err: *?*NS.Error) ?*Self
         {
             return objc.mtl_compute_pipeline_new_from_reflection(device, function, options, reflection, err);
         }
 
-        fn new_from_descriptor(device: *Device, descriptor: *ComputePipeline.Descriptor, options: PipelineOption, reflection: *ComputePipeline.Reflection, err: *NS.Error) ?*Self
+        fn new_from_descriptor(device: *Device, descriptor: *ComputePipeline.Descriptor, options: PipelineOption, reflection: *ComputePipeline.Reflection, err: *?*NS.Error) ?*Self
         {
             return objc.mtl_compute_pipeline_new_from_descriptor(device, descriptor, options, reflection, err);
         }
@@ -1375,15 +1356,6 @@ pub const Vertex = opaque
     };
 };
 
-pub const RenderPipeline = opaque
-{
-    const Self = @This();
-    pub fn set_vertex_descriptor(self: *Self, vertex_descriptor: *Vertex.Descriptor) void
-    {
-        objc.mtl_render_pipeline_set_vertex_descriptor(self, vertex_descriptor);
-    }
-};
-
 pub const Argument = opaque
 {
     pub fn get_name(self: *Argument) ?[*:0]u8
@@ -1715,19 +1687,55 @@ pub const DepthStencil = opaque
     };
 };
 
+pub const RenderPipeline = opaque
+{
+    const Self = @This();
+
+    pub fn new(device: *Device, descriptor: *Render.Descriptor, err: *?*NS.Error) ?*Self
+    {
+        return objc.mtl_render_pipeline_new(device, descriptor, err);
+    }
+
+    pub fn set_vertex_descriptor(self: *Self, vertex_descriptor: *Vertex.Descriptor) void
+    {
+        objc.mtl_render_pipeline_set_vertex_descriptor(self, vertex_descriptor);
+    }
+
+    pub const Descriptor = opaque
+    {
+        pub fn new() ?*Self.Descriptor
+        {
+            return objc.mtl_render_pipeline_descriptor_new();
+        }
+
+        pub fn set_vertex_function(self: *Self.Descriptor, vertex_function: *Function) void
+        {
+            objc.mtl_render_pipeline_descriptor_set_vertex_function(self, vertex_function);
+        }
+
+        pub fn set_fragment_function(self: *Self.Descriptor, fragment_function: *Function) void
+        {
+            objc.mtl_render_pipeline_descriptor_set_fragment_function(self, fragment_function);
+        }
+
+        pub fn set_color_attachment_pixel_format(self: *Self.Descriptor, index: u32, pixel_format: PixelFormat) void
+        {
+            objc.mtl_render_pipeline_descriptor_set_color_attachment_pixel_format(self, index, pixel_format);
+        }
+
+    };
+
+    pub const State = opaque
+    {
+        pub fn new_from_descriptor(device: *Device, render_pipeline_descriptor: *Self.Descriptor, ns_error: *?*NS.Error) ?*Self.State
+        {
+            return objc.mtl_render_pipeline_state_new_from_descriptor(device, render_pipeline_descriptor, ns_error);
+        }
+    };
+};
 
 pub const Render = opaque
 {
-    pub const Pipeline = opaque
-    {
-        const Self = @This();
-
-        pub fn new(device: *Device, descriptor: *Render.Descriptor, err: *NS.Error) ?*Self
-        {
-            return objc.mtl_render_pipeline_new(device, descriptor, err);
-        }
-    };
-
     pub const Descriptor = opaque
     {
         const Self = @This();
@@ -1761,11 +1769,13 @@ pub const Render = opaque
         {
             objc.mtl_render_descriptor_set_sample_count(self, sample_count);
         }
+
     };
 
     pub const PassDescriptor = opaque
     {
         const Self = @This();
+
         pub fn new() ?*Self
         {
             return objc.mtl_render_pass_descriptor_new();
@@ -1780,6 +1790,40 @@ pub const Render = opaque
         {
             objc.mtl_render_pass_descriptor_pass_load_action(self, color_attachment, load_action);
         }
+
+        pub fn get_color_attachment(self: *Self, index: u32) ?*Self.ColorAttachmentDescriptor
+        {
+            return objc.mtl_render_pass_descriptor_get_color_attachment(self, index);
+        }
+
+        pub const ColorAttachmentDescriptor = opaque
+        {
+            pub fn set_texture(self: *Self.ColorAttachmentDescriptor, texture: *Texture) void
+            {
+                objc.mtl_render_pass_descriptor_color_attachment_descriptor_set_texture(self, texture);
+            }
+
+            pub fn set_load_action(self: *Self.ColorAttachmentDescriptor, load_action: LoadAction) void
+            {
+                objc.mtl_render_pass_descriptor_color_attachment_descriptor_set_load_action(self, load_action);
+            }
+
+            pub fn set_clear_color(self: *Self.ColorAttachmentDescriptor, clear_color: ClearColor) void
+            {
+                objc.mtl_render_pass_descriptor_color_attachment_descriptor_set_clear_color(self, clear_color);
+            }
+
+            pub fn set_store_action(self: *Self.ColorAttachmentDescriptor, store_action: StoreAction) void
+            {
+                objc.mtl_render_pass_descriptor_color_attachment_descriptor_set_store_action(self, store_action);
+            }
+        };
+    };
+
+    pub const Stage = enum(u32)
+    {
+        vertex = 1 << 0,
+        fragment = 1 << 1,
     };
 };
 
@@ -1805,7 +1849,7 @@ pub const CommandBuffer = opaque
         objc.mtl_command_buffer_on_complete(command_queue, sender, on_complete_fn);
     }
 
-    pub fn present_drawable(self: *CommandBuffer, drawable: *Drawable) void
+    pub fn present_drawable(self: *CommandBuffer, drawable: *CA.Metal.Drawable) void
     {
         objc.mtl_command_buffer_present_drawable(self, drawable);
     }
@@ -2247,9 +2291,9 @@ pub const RenderCommandEncoder = opaque
         objc.mtl_render_command_encoder_set_viewport(self, viewport);
     }
 
-    pub fn set_render_pipeline(self: *Self, render_pipeline: *RenderPipeline) void
+    pub fn set_render_pipeline_state(self: *Self, render_pipeline_state: *RenderPipeline.State) void
     {
-        objc.mtl_render_command_encoder_set_pipeline(self, render_pipeline);
+        objc.mtl_render_command_encoder_set_pipeline_state(self, render_pipeline_state);
     }
 
     pub fn set_depth_stencil(self: *Self, depth_stencil_state: *DepthStencil.State) void
@@ -2257,9 +2301,10 @@ pub const RenderCommandEncoder = opaque
         objc.mtl_render_command_encoder_set_depth_stencil_state(self, depth_stencil_state);
     }
 
-    pub fn set_vertex_bytes_at_index(self: *Self, bytes: []const u8, index: u32) void
+    pub fn set_vertex_bytes_at_index(self: *Self, bytes: anytype, index: u32) void
     {
-        objc.mtl_render_command_set_vertex_bytes_at_index(self, bytes.ptr, bytes.len, index);
+        const byte_slice = std.mem.asBytes(&bytes);
+        objc.mtl_render_command_encoder_set_vertex_bytes_at_index(self, @intToPtr([*]u8, @ptrToInt(&bytes)), byte_slice.len, index);
     }
 
     pub fn set_vertex_buffer(self: *Self, buffer: *Buffer, buffer_offset: NS.UInteger, index: u32) void
@@ -2272,7 +2317,7 @@ pub const RenderCommandEncoder = opaque
         objc.mtl_render_command_encoder_set_fragment_buffer(self, buffer, buffer_offset, index);
     }
 
-    pub fn draw_primitives(self: *Self, primitive_type: PrimitiveType, primitive_start: Size, primitive_count: Size) void
+    pub fn draw_primitives(self: *Self, primitive_type: PrimitiveType, primitive_start: NS.Integer, primitive_count: NS.Integer) void
     {
         objc.mtl_render_command_encoder_draw_primitives(self, primitive_type, primitive_start, primitive_count);
     }
@@ -2285,6 +2330,11 @@ pub const RenderCommandEncoder = opaque
     pub fn set_texture_at_index(self: *Self, texture: *Texture, index: NS.UInteger) void
     {
         objc.mtl_render_command_encoder_set_texture_at_index(self, texture, index);
+    }
+
+    pub fn end(self: *Self) void
+    {
+        objc.mtl_render_command_encoder_end(self);
     }
 };
 
@@ -2301,6 +2351,36 @@ pub const CommandQueue = opaque
     {
         return objc.mtl_command_queue_new_with_command_buffer_count(device, command_buffer_count);
     }
+
+    pub fn get_command_buffer(self: *Self) ?*CommandBuffer
+    {
+        return objc.mtl_command_queue_get_command_buffer(self);
+    }
+};
+
+pub const ClearColor = extern struct
+{
+    const Self = @This();
+    const Type = f64;
+
+    red: Type,
+    green: Type,
+    blue: Type,
+    alpha: Type,
+
+    pub fn make(red: Type, green: Type, blue: Type, alpha: Type) Self
+    {
+        return .{
+            .red = red,
+            .green = green,
+            .blue = blue,
+            .alpha = alpha,
+        };
+    }
+};
+
+pub const Texture = opaque
+{
 };
 
 comptime

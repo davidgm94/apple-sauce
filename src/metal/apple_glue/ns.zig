@@ -1,4 +1,5 @@
 const NS = @This();
+const CA = @import("ca.zig");
 pub const objc = @import("objc.zig");
 
 pub const Integer = i64;
@@ -47,5 +48,15 @@ pub const Error = opaque
     pub fn get_localized_failure_reason(self: *Error) ?[*:0]u8
     {
         return objc.ns_error_get_localized_failure_reason(self);
+    }
+};
+
+pub const Window = opaque
+{
+    const Self = @This();
+
+    pub fn content_view_set_layer(self: *Self, layer: *CA.Metal.Layer) void
+    {
+        objc.ns_window_content_view_set_layer(self, layer);
     }
 };

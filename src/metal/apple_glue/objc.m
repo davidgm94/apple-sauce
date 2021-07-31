@@ -65,6 +65,7 @@ typedef struct
 typedef void MtDevice;
 typedef void MtRenderDesc;
 typedef void MtRenderPipeline;
+typedef void MtRenderPipelineState;
 typedef void MtCommandQueue;
 typedef void MtCommandEncoder;
 typedef void MtBlitCommandEncoder;
@@ -83,6 +84,8 @@ typedef void MtDepthStencilDescriptor;
 typedef void MtDepthStencilState;
 typedef void MtBuffer;
 typedef void MtCompileOptions;
+
+typedef void MtRenderPassColorAttachmentDescriptor;
 
 typedef void MtFunction;
 typedef void MtFunctionConstant;
@@ -657,9 +660,178 @@ typedef enum MtResourceOptions {
   MtResourceHazardTrackingModeTracked   = MtHazardTrackingModeTracked   << 8
 } MtResourceOptions;
 
+typedef enum MtPixelFormat {
+  MtPixelFormatInvalid                = 0,
+
+  /* Normal 8 bit formats */
+  MtPixelFormatA8Unorm                = 1,
+  MtPixelFormatR8Unorm                = 10,
+  MtPixelFormatR8Unorm_sRGB           = 11,
+  MtPixelFormatR8Snorm                = 12,
+  MtPixelFormatR8Uint                 = 13,
+  MtPixelFormatR8Sint                 = 14,
+
+  /* Normal 16 bit formats */
+  MtPixelFormatR16Unorm               = 20,
+  MtPixelFormatR16Snorm               = 22,
+  MtPixelFormatR16Uint                = 23,
+  MtPixelFormatR16Sint                = 24,
+  MtPixelFormatR16Float               = 25,
+
+  MtPixelFormatRG8Unorm               = 30,
+  MtPixelFormatRG8Unorm_sRGB          = 31,
+  MtPixelFormatRG8Snorm               = 32,
+  MtPixelFormatRG8Uint                = 33,
+  MtPixelFormatRG8Sint                = 34,
+
+  /* Packed 16 bit formats */
+  MtPixelFormatB5G6R5Unorm            = 40,
+  MtPixelFormatA1BGR5Unorm            = 41,
+  MtPixelFormatABGR4Unorm             = 42,
+  MtPixelFormatBGR5A1Unorm            = 43,
+
+  /* Normal 32 bit formats */
+  MtPixelFormatR32Uint                = 53,
+  MtPixelFormatR32Sint                = 54,
+  MtPixelFormatR32Float               = 55,
+  MtPixelFormatRG16Unorm              = 60,
+  MtPixelFormatRG16Snorm              = 62,
+  MtPixelFormatRG16Uint               = 63,
+  MtPixelFormatRG16Sint               = 64,
+  MtPixelFormatRG16Float              = 65,
+  MtPixelFormatRGBA8Unorm             = 70,
+  MtPixelFormatRGBA8Unorm_sRGB        = 71,
+  MtPixelFormatRGBA8Snorm             = 72,
+  MtPixelFormatRGBA8Uint              = 73,
+  MtPixelFormatRGBA8Sint              = 74,
+  MtPixelFormatBGRX8Unorm             = 75,
+  MtPixelFormatBGRA8Unorm             = 80,
+  MtPixelFormatBGRA8Unorm_sRGB        = 81,
+
+  /* Packed 32 bit formats */
+  MtPixelFormatRGB10A2Unorm           = 90,
+  MtPixelFormatRGB10A2Uint            = 91,
+  MtPixelFormatRG11B10Float           = 92,
+  MtPixelFormatRGB9E5Float            = 93,
+  MtPixelFormatBGR10A2Unorm           = 94,
+  MtPixelFormatBGR10_XR               = 554,
+  MtPixelFormatBGR10_XR_sRGB          = 555,
+
+  /* Normal 64 bit formats */
+
+  MtPixelFormatRG32Uint               = 103,
+  MtPixelFormatRG32Sint               = 104,
+  MtPixelFormatRG32Float              = 105,
+  MtPixelFormatRGBA16Unorm            = 110,
+  MtPixelFormatRGBA16Snorm            = 112,
+  MtPixelFormatRGBA16Uint             = 113,
+  MtPixelFormatRGBA16Sint             = 114,
+  MtPixelFormatRGBA16Float            = 115,
+  MtPixelFormatBGRA10_XR              = 552,
+  MtPixelFormatBGRA10_XR_sRGB         = 553,
+
+  /* Normal 128 bit formats */
+
+  MtPixelFormatRGBA32Uint             = 123,
+  MtPixelFormatRGBA32Sint             = 124,
+  MtPixelFormatRGBA32Float            = 125,
+
+  /* Compressed formats. */
+
+  /* S3TC/DXT */
+  MtPixelFormatBC1_RGBA               = 130,
+  MtPixelFormatBC1_RGBA_sRGB          = 131,
+  MtPixelFormatBC2_RGBA               = 132,
+  MtPixelFormatBC2_RGBA_sRGB          = 133,
+  MtPixelFormatBC3_RGBA               = 134,
+  MtPixelFormatBC3_RGBA_sRGB          = 135,
+
+  /* RGTC */
+  MtPixelFormatBC4_RUnorm             = 140,
+  MtPixelFormatBC4_RSnorm             = 141,
+  MtPixelFormatBC5_RGUnorm            = 142,
+  MtPixelFormatBC5_RGSnorm            = 143,
+
+  /* BPTC */
+  MtPixelFormatBC6H_RGBFloat          = 150,
+  MtPixelFormatBC6H_RGBUfloat         = 151,
+  MtPixelFormatBC7_RGBAUnorm          = 152,
+  MtPixelFormatBC7_RGBAUnorm_sRGB     = 153,
+
+  /* PVRTC */
+  MtPixelFormatPVRTC_RGB_2BPP         = 160,
+  MtPixelFormatPVRTC_RGB_2BPP_sRGB    = 161,
+  MtPixelFormatPVRTC_RGB_4BPP         = 162,
+  MtPixelFormatPVRTC_RGB_4BPP_sRGB    = 163,
+  MtPixelFormatPVRTC_RGBA_2BPP        = 164,
+  MtPixelFormatPVRTC_RGBA_2BPP_sRGB   = 165,
+  MtPixelFormatPVRTC_RGBA_4BPP        = 166,
+  MtPixelFormatPVRTC_RGBA_4BPP_sRGB   = 167,
+
+  /* ETC2 */
+  MtPixelFormatEAC_R11Unorm           = 170,
+  MtPixelFormatEAC_R11Snorm           = 172,
+  MtPixelFormatEAC_RG11Unorm          = 174,
+  MtPixelFormatEAC_RG11Snorm          = 176,
+  MtPixelFormatEAC_RGBA8              = 178,
+  MtPixelFormatEAC_RGBA8_sRGB         = 179,
+
+  MtPixelFormatETC2_RGB8              = 180,
+  MtPixelFormatETC2_RGB8_sRGB         = 181,
+  MtPixelFormatETC2_RGB8A1            = 182,
+  MtPixelFormatETC2_RGB8A1_sRGB       = 183,
+
+  /* ASTC */
+  MtPixelFormatASTC_4x4_sRGB          = 186,
+  MtPixelFormatASTC_5x4_sRGB          = 187,
+  MtPixelFormatASTC_5x5_sRGB          = 188,
+  MtPixelFormatASTC_6x5_sRGB          = 189,
+  MtPixelFormatASTC_6x6_sRGB          = 190,
+  MtPixelFormatASTC_8x5_sRGB          = 192,
+  MtPixelFormatASTC_8x6_sRGB          = 193,
+  MtPixelFormatASTC_8x8_sRGB          = 194,
+  MtPixelFormatASTC_10x5_sRGB         = 195,
+  MtPixelFormatASTC_10x6_sRGB         = 196,
+  MtPixelFormatASTC_10x8_sRGB         = 197,
+  MtPixelFormatASTC_10x10_sRGB        = 198,
+  MtPixelFormatASTC_12x10_sRGB        = 199,
+  MtPixelFormatASTC_12x12_sRGB        = 200,
+
+  MtPixelFormatASTC_4x4_LDR           = 204,
+  MtPixelFormatASTC_5x4_LDR           = 205,
+  MtPixelFormatASTC_5x5_LDR           = 206,
+  MtPixelFormatASTC_6x5_LDR           = 207,
+  MtPixelFormatASTC_6x6_LDR           = 208,
+  MtPixelFormatASTC_8x5_LDR           = 210,
+  MtPixelFormatASTC_8x6_LDR           = 211,
+  MtPixelFormatASTC_8x8_LDR           = 212,
+  MtPixelFormatASTC_10x5_LDR          = 213,
+  MtPixelFormatASTC_10x6_LDR          = 214,
+  MtPixelFormatASTC_10x8_LDR          = 215,
+  MtPixelFormatASTC_10x10_LDR         = 216,
+  MtPixelFormatASTC_12x10_LDR         = 217,
+  MtPixelFormatASTC_12x12_LDR         = 218,
+  MtPixelFormatGBGR422                = 240,
+  MtPixelFormatBGRG422                = 241,
+
+  /* Depth */
+  MtPixelFormatDepth16Unorm           = 250,
+  MtPixelFormatDepth32Float           = 252,
+
+  /* Stencil */
+  MtPixelFormatStencil8               = 253,
+
+  /* Depth Stencil */
+  MtPixelFormatDepth24Unorm_Stencil8  = 255,
+  MtPixelFormatDepth32Float_Stencil8  = 260,
+  MtPixelFormatX32_Stencil8           = 261,
+  MtPixelFormatX24_Stencil8           = 262
+} MtPixelFormat;
+
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
+#import <Cocoa/Cocoa.h>
 
 MT_HIDE MT_INLINE
 NSString* mtNSString(const char* str)
@@ -776,6 +948,54 @@ mtMTLIndirectCommandBufferExecutionRange(MtIndirectCommandBufferExecutionRange r
   return icbRange;
 }
 
+CF_RETURNS_RETAINED MT_EXPORT
+CAMetalLayer* ca_metal_layer_get()
+{
+    return [CAMetalLayer layer];
+}
+
+MT_EXPORT
+void ca_metal_layer_set_device(CAMetalLayer* layer, MtDevice* device)
+{
+    layer.device = device;
+}
+
+MT_EXPORT
+void ca_metal_layer_set_pixel_format(CAMetalLayer* layer, MtPixelFormat pixel_format)
+{
+    layer.pixelFormat = (MTLPixelFormat) pixel_format;
+}
+
+MT_EXPORT
+MtPixelFormat ca_metal_layer_get_pixel_format(CAMetalLayer* layer)
+{
+    return layer.pixelFormat;
+}
+
+MT_EXPORT
+void ca_metal_layer_set_drawable_size(CAMetalLayer* layer, CGSize drawable_size)
+{
+    layer.drawableSize = drawable_size;
+}
+
+MT_EXPORT CF_RETURNS_RETAINED
+id<CAMetalDrawable> ca_metal_layer_get_next_drawable(CAMetalLayer* layer)
+{
+    return [layer nextDrawable];
+}
+
+MT_EXPORT CF_RETURNS_RETAINED
+id<MTLTexture> ca_metal_drawable_get_texture(id<CAMetalDrawable> drawable)
+{
+    return [drawable texture];
+}
+
+MT_EXPORT
+void ns_window_content_view_set_layer(NSWindow* window, CAMetalLayer* layer)
+{
+    window.contentView.layer = layer;
+    window.contentView.wantsLayer = YES;
+}
 
 CF_RETURNS_RETAINED MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) MT_EXPORT
 MtCompileOptions* mtl_compile_options_new()
@@ -937,34 +1157,170 @@ MtLibrary* mtl_new_library_from_file(MtDevice* device, char* filepath, NsError* 
 }
 
 MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) CF_RETURNS_RETAINED
-MtLibrary* mtl_new_library_from_source(MtDevice* device, char* source, MtCompileOptions* options, NsError** error)
+MtLibrary* mtl_library_new_from_source(MtDevice* device, char* source, MtCompileOptions* options, NSError* _Nullable * _Nullable error)
 {
-    NSError *_err;
     MtLibrary* lib = [(id<MTLDevice>)device
         newLibraryWithSource: mtNSString(source)
         options: (MTLCompileOptions*)options
-        error: &_err];
-
-    *error = _err;
+        error: error];
 
     return lib;
 }
 
-void mtl_new_event(MtDevice* device)
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) CF_RETURNS_RETAINED
+MtFunction* mtl_function_new(MtLibrary* library, const char* name)
 {
+    return [(id<MTLLibrary>)library newFunctionWithName: mtNSString(name)];
 }
 
-void mtl_new_shared_event(MtDevice* device)
+MT_EXPORT CF_RETURNS_RETAINED 
+MtCommandQueue* mtl_command_queue_new(MtDevice* device)
 {
+    return [(id<MTLDevice>)device newCommandQueue];
+}
+MT_EXPORT CF_RETURNS_RETAINED
+id<MTLCommandBuffer> mtl_command_queue_get_command_buffer(id<MTLCommandQueue> command_queue)
+{
+    return [command_queue commandBuffer];
 }
 
-void mtl_new_shared_event_with_handle(MtDevice* device, shared_event_handle)
+CF_RETURNS_RETAINED MT_EXPORT
+MTLRenderPipelineDescriptor* mtl_render_pipeline_descriptor_new()
 {
+    return [MTLRenderPipelineDescriptor new];
 }
 
-void mtl_new_fence(MtDevice* device)
+MT_EXPORT
+void mtl_render_pipeline_descriptor_set_vertex_function(MTLRenderPipelineDescriptor* render_pipeline_descriptor, MtFunction* vertex_function)
 {
+    render_pipeline_descriptor.vertexFunction = vertex_function;
 }
+
+MT_EXPORT
+void mtl_render_pipeline_descriptor_set_fragment_function(MTLRenderPipelineDescriptor* render_pipeline_descriptor, MtFunction* fragment_function)
+{
+    render_pipeline_descriptor.fragmentFunction = fragment_function;
+}
+
+MT_EXPORT
+void mtl_render_pipeline_descriptor_set_color_attachment_pixel_format(MTLRenderPipelineDescriptor* render_pipeline_descriptor, uint32_t index, MtPixelFormat pixel_format)
+{
+    render_pipeline_descriptor.colorAttachments[index].pixelFormat = (MTLPixelFormat) pixel_format;
+}
+
+MT_EXPORT CF_RETURNS_RETAINED
+MtRenderPipelineState* mtl_render_pipeline_state_new_from_descriptor(MtDevice* device, MTLRenderPipelineDescriptor* render_pipeline_descriptor, NSError** error)
+{
+    return [(id<MTLDevice>)device
+            newRenderPipelineStateWithDescriptor: render_pipeline_descriptor
+            error: error];
+}
+
+MT_EXPORT CF_RETURNS_RETAINED
+MTLRenderPassDescriptor* mtl_render_pass_descriptor_new()
+{
+    return [MTLRenderPassDescriptor new];
+}
+
+MT_EXPORT CF_RETURNS_RETAINED
+MTLRenderPassColorAttachmentDescriptor* mtl_render_pass_descriptor_get_color_attachment(MTLRenderPassDescriptor* render_pass_descriptor, uint32_t index)
+{
+    return [render_pass_descriptor colorAttachments][index];
+}
+
+MT_EXPORT
+void mtl_render_pass_descriptor_color_attachment_descriptor_set_texture(MTLRenderPassColorAttachmentDescriptor* color_attachment, id<MTLTexture> texture)
+{
+    [color_attachment setTexture: texture];
+}
+
+MT_EXPORT
+void mtl_render_pass_descriptor_color_attachment_descriptor_set_load_action(MTLRenderPassColorAttachmentDescriptor* color_attachment, MTLLoadAction load_action)
+{
+    [color_attachment setLoadAction: load_action];
+}
+
+MT_EXPORT
+void mtl_render_pass_descriptor_color_attachment_descriptor_set_store_action(MTLRenderPassColorAttachmentDescriptor* color_attachment, MTLStoreAction store_action)
+{
+    [color_attachment setStoreAction: store_action];
+}
+
+MT_EXPORT
+void mtl_render_pass_descriptor_color_attachment_descriptor_set_clear_color(MTLRenderPassColorAttachmentDescriptor* color_attachment, MTLClearColor clear_color)
+{
+    [color_attachment setClearColor: clear_color];
+}
+
+MT_EXPORT CF_RETURNS_RETAINED
+id<MTLRenderCommandEncoder> mtl_render_command_encoder_new(id<MTLCommandBuffer> command_buffer, MTLRenderPassDescriptor* render_pass_descriptor)
+{
+    return [command_buffer renderCommandEncoderWithDescriptor: render_pass_descriptor];
+}
+
+MT_EXPORT
+void mtl_render_command_encoder_set_vertex_bytes_at_index(id<MTLRenderCommandEncoder> render_command_encoder, const uint8_t* bytes, uint64_t byte_count, uint32_t index)
+{
+    [render_command_encoder
+        setVertexBytes: bytes
+        length: byte_count
+        atIndex: index];
+}
+
+MT_EXPORT
+void mtl_render_command_encoder_set_pipeline_state(id<MTLRenderCommandEncoder> render_command_encoder, id<MTLRenderPipelineState> render_pipeline_state)
+{
+    [render_command_encoder setRenderPipelineState: render_pipeline_state];
+}
+
+MT_EXPORT
+void mtl_render_command_encoder_draw_primitives(id<MTLRenderCommandEncoder> render_command_encoder, MTLPrimitiveType primitive_type, NSInteger vertex_start, NSInteger vertex_count)
+{
+    [render_command_encoder
+        drawPrimitives: primitive_type
+        vertexStart: vertex_start 
+        vertexCount: vertex_count];
+}
+
+MT_EXPORT
+void mtl_render_command_encoder_end(id<MTLRenderCommandEncoder> render_command_encoder)
+{
+    [render_command_encoder endEncoding];
+}
+
+MT_EXPORT
+void mtl_command_buffer_present_drawable(id<MTLCommandBuffer> command_buffer, id<CAMetalDrawable> drawable)
+{
+    [command_buffer presentDrawable: drawable];
+}
+
+MT_EXPORT
+void mtl_command_buffer_commit(id<MTLCommandBuffer> command_buffer)
+{
+    [command_buffer commit];
+}
+
+//pub extern fn mtl_render_command_encoder_draw_primitives(*Metal.RenderCommandEncoder, Metal.PrimitiveType, NS.UInteger, NS.UInteger) callconv(.C) void;
+//pub extern fn mtl_render_command_encoder_end(*Metal.RenderCommandEncoder) callconv(.C) void;
+
+//pub extern fn mtl_command_buffer_present_drawable(*Metal.CommandBuffer, *CA.Metal.Drawable) callconv(.C) void;
+//pub extern fn mtl_command_buffer_commit(*Metal.CommandBuffer) callconv(.C) void;
+
+//void mtl_new_event(MtDevice* device)
+//{
+//}
+
+//void mtl_new_shared_event(MtDevice* device)
+//{
+//}
+
+//void mtl_new_shared_event_with_handle(MtDevice* device, shared_event_handle)
+//{
+//}
+
+//void mtl_new_fence(MtDevice* device)
+//{
+//}
 //
 //void mtl_device_get_recommended_max_working_set_size(MtDevice* device)
 //{
@@ -981,4 +1337,4 @@ void mtl_new_fence(MtDevice* device)
 //void mtl_device_get_max_threads_per_thread_group(MtDevice* device)
 //{
 //}
-
+        //id<MTLRenderCommandEncoder> rce = 

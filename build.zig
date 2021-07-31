@@ -14,7 +14,6 @@ pub fn build(b: *std.build.Builder) void
 
     const exe = b.addExecutable("apple_sauce", "src/main.zig");
     exe.addCSourceFile("src/metal/apple_glue/objc.m", &[_][]const u8 { ""});
-    exe.addCSourceFile("src/objc.m", &[_][]const u8 { "" });
     exe.addIncludeDir("/opt/local/include");
     exe.addLibPath("/opt/local/lib");
     exe.linkSystemLibrary("glfw");
