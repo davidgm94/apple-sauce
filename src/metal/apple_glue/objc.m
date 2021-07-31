@@ -625,6 +625,360 @@ typedef struct
     MtTextureSwizzle alpha;
 } MtTextureSwizzleChannels;
 
+typedef enum MtCPUCacheMode {
+  MtCPUCacheModeDefaultCache  = 0,
+  MtCPUCacheModeWriteCombined = 1
+} MtCPUCacheMode;
+
+typedef enum MtHazardTrackingMode {
+  MtHazardTrackingModeDefault   = 0,
+  MtHazardTrackingModeUntracked = 1,
+  MtHazardTrackingModeTracked   = 2
+} MtHazardTrackingMode;
+
+typedef enum MtStorageMode {
+  MtStorageModeShared     = 0,
+  MtStorageModeManaged    = 1,
+  MtStorageModePrivate    = 2,
+  MtStorageModeMemoryless = 3
+} MtStorageMode;
+
+typedef enum MtResourceOptions {
+  MtResourceCPUCacheModeDefaultCache    = MtCPUCacheModeDefaultCache,
+  MtResourceCPUCacheModeWriteCombined   = MtCPUCacheModeWriteCombined,
+  
+  MtResourceStorageModeShared           = MtStorageModeShared           << 4,
+  MtResourceStorageModeManaged          = MtStorageModeManaged          << 4,
+  MtResourceStorageModePrivate          = MtStorageModePrivate          << 4,
+  MtResourceStorageModeMemoryless       = MtStorageModeMemoryless       << 4,
+  
+  MtResourceHazardTrackingModeDefault   = MtHazardTrackingModeDefault   << 8,
+  MtResourceHazardTrackingModeUntracked = MtHazardTrackingModeUntracked << 8,
+  MtResourceHazardTrackingModeTracked   = MtHazardTrackingModeTracked   << 8
+} MtResourceOptions;
+
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
+
+MT_HIDE MT_INLINE
+NSString* mtNSString(const char* str)
+{
+    return [NSString stringWithCString: str
+            encoding: NSUTF8StringEncoding];
+}
+
+MT_HIDE
+MT_INLINE
+const char*
+Cstring(NSString* str) {
+  return [str cStringUsingEncoding:NSUTF8StringEncoding];
+}
+
+MT_HIDE
+MT_INLINE
+MTLSize
+mtMTLSize(MtSize size) {
+	return MTLSizeMake(size.width, size.height, size.depth);
+}
+
+MT_HIDE
+MT_INLINE
+MtSize
+mtSize(MTLSize size) {
+	MtSize sz = {size.width, size.height, size.depth};
+	return sz;
+}
+
+MT_HIDE
+MT_INLINE
+MTLOrigin
+mtMTLOrigin(MtOrigin orig) {
+	return MTLOriginMake(orig.x, orig.y, orig.z);
+}
+
+MT_HIDE
+MT_INLINE
+MtOrigin
+mtOrigin(MTLOrigin orig) {
+	MtOrigin o = {orig.x, orig.y, orig.z};
+	return o;
+}
+
+MT_HIDE
+MT_INLINE
+MTLSizeAndAlign
+mtMTLSizeAndAlign(MtSizeAndAlign s) {
+	MTLSizeAndAlign o = {s.size, s.align};
+	return o;
+}
+
+MT_HIDE
+MT_INLINE
+MtSizeAndAlign
+mtSizeAndAlign(MTLSizeAndAlign s) {
+	MtSizeAndAlign o = {s.size, s.align};
+	return o;
+}
+
+
+MT_HIDE
+MT_INLINE
+NSRange
+mtNSRange(NsRange range) {
+	return NSMakeRange(range.location, range.length);
+}
+
+MT_HIDE
+MT_INLINE
+NsRange
+mtRange(NSRange range) {
+	NsRange r = {range.location, range.length};
+	return r;
+}
+
+MT_HIDE
+MT_INLINE
+const char*
+CstringFromDict(NSDictionary<NSErrorUserInfoKey, id> *dict) {
+	return Cstring([NSString stringWithFormat:@"Dictionary: %@", dict]);
+}
+
+MT_HIDE
+MT_INLINE
+MTLRegion
+mtMTLRegion(MtRegion region) {
+	MTLRegion reg = {mtMTLOrigin(region.origin), mtMTLSize(region.size)};
+	return reg;
+}
+
+MT_HIDE
+MT_INLINE
+MtRegion
+mtRegion(MtRegion region) {
+	MtRegion reg = {region.origin, region.size};
+	return reg;
+}
+
+MT_HIDE
+MT_INLINE
+MtIndirectCommandBufferExecutionRange
+mtIndirectCommandBufferExecutionRange(MtIndirectCommandBufferExecutionRange range) {
+  MtIndirectCommandBufferExecutionRange icbRange = {range.location, range.length};
+  return icbRange;
+}
+
+MT_HIDE
+MT_INLINE
+MtIndirectCommandBufferExecutionRange
+mtMTLIndirectCommandBufferExecutionRange(MtIndirectCommandBufferExecutionRange range) {
+  MtIndirectCommandBufferExecutionRange icbRange = {range.location, range.length};
+  return icbRange;
+}
+
+
+CF_RETURNS_RETAINED MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) MT_EXPORT
+MtCompileOptions* mtl_compile_options_new()
+{
+    return [MTLCompileOptions new];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) 
+MtLanguageVersion mtl_compile_options_get_language_version(MtCompileOptions* compile_options)
+{
+    return (MtLanguageVersion) [(MTLCompileOptions*) (compile_options) languageVersion];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) 
+void mtl_compile_options_set_language_version(MtCompileOptions* compile_options, MtLanguageVersion language_version)
+{
+    return [(MTLCompileOptions*) (compile_options) setLanguageVersion:(MTLLanguageVersion) language_version];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) 
+bool mtl_compile_options_get_fast_math_enabled(MtCompileOptions* compile_options)
+{
+    return [(MTLCompileOptions*) (compile_options) fastMathEnabled];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) 
+void mtl_compile_options_set_fast_math_enabled(MtCompileOptions* compile_options, bool fast_math_enabled)
+{
+    return [(MTLCompileOptions*) (compile_options) setFastMathEnabled: fast_math_enabled];
+}
+
+// Device
+CF_RETURNS_RETAINED MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) 
+const char* mtl_device_get_name(MtDevice* device)
+{
+    return [[(id<MTLDevice>)device name] cStringUsingEncoding:NSUTF8StringEncoding];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) 
+bool mtl_device_is_headless(MtDevice* device)
+{
+    return [(id<MTLDevice>) device isHeadless];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) 
+bool mtl_device_is_low_power(MtDevice* device)
+{
+    return [(id<MTLDevice>) device isLowPower];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11)) MT_API_UNAVAILABLE(mt_ios) 
+bool mtl_device_is_removable(MtDevice* device)
+{
+    return [(id<MTLDevice>) device isRemovable];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.13), mt_ios(11.0)) 
+uint64_t mtl_device_get_registry_id(MtDevice* device)
+{
+    return [(id<MTLDevice>) device registryID];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) 
+MtDeviceLocation mtl_device_get_location(MtDevice* device)
+{
+    return [(id<MTLDevice>)device location];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.15)) MT_API_UNAVAILABLE(mt_ios)
+uint64_t mtl_device_get_location_number(MtDevice* device)
+{
+    return [(id<MTLDevice>)device locationNumber];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.15)) MT_API_UNAVAILABLE(mt_ios)
+uint64_t mtl_device_get_max_transfer_rate(MtDevice* device)
+{
+    return [(id<MTLDevice>)device maxTransferRate];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.15), mt_ios(13.0))
+bool mtl_device_has_unified_memory(MtDevice* device)
+{
+    return [(id<MTLDevice>)device hasUnifiedMemory];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.15)) MT_API_UNAVAILABLE(mt_ios)
+uint64_t mtl_device_get_peer_group_id(MtDevice* device)
+{
+    return [(id<MTLDevice>)device peerGroupID];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.15)) MT_API_UNAVAILABLE(mt_ios)
+uint32_t mtl_device_get_peer_count(MtDevice* device)
+{
+    return [(id<MTLDevice>)device peerCount];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.15)) MT_API_UNAVAILABLE(mt_ios)
+uint32_t mtl_device_get_peer_index(MtDevice* device)
+{
+    return [(id<MTLDevice>)device peerIndex];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.15), mt_ios(13.0))
+bool mtl_device_supports_gpu_family(MtDevice* device, MtGPUFamily family)
+{
+    return [(id<MTLDevice>)device supportsFamily: (MTLGPUFamily)family];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0))
+bool mtl_device_supports_feature_set(MtDevice* device, MtFeatureSet feature_set)
+{
+    return [(id<MTLDevice>)device supportsFeatureSet: (MTLFeatureSet)feature_set];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.14), mt_ios(12.0))
+NsUInteger mtl_device_get_max_buffer_length(MtDevice* device)
+{
+    return [(id<MTLDevice>)device maxBufferLength];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) CF_RETURNS_RETAINED
+MtBuffer* mtl_new_buffer(MtDevice* device, NsUInteger length, MtResourceOptions options)
+{
+    return [(id<MTLDevice>)device
+        newBufferWithLength: length
+        options: (MTLResourceOptions)options];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) CF_RETURNS_RETAINED
+MtBuffer* mtl_new_buffer_from_memory(MtDevice* __restrict device, const void* __restrict ptr, NsUInteger len, MtResourceOptions options)
+{
+    return [(id<MTLDevice>)device
+        newBufferWithBytes: ptr
+        length: len
+        options: (MTLResourceOptions)options];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) CF_RETURNS_RETAINED
+MtBuffer* mtl_new_buffer_from_memory_no_copy(MtDevice* device, void* __restrict _Nonnull ptr, NsUInteger len, MtResourceOptions options)
+{
+    return [(id<MTLDevice>)device newBufferWithBytesNoCopy: ptr 
+                                   					length: len 
+                                  				   options: (MTLResourceOptions)options 
+                              				   deallocator: nil];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) CF_RETURNS_RETAINED
+MtLibrary* mtl_new_default_library(MtDevice* device)
+{
+    return [(id<MTLDevice>)device newDefaultLibrary];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) CF_RETURNS_RETAINED
+MtLibrary* mtl_new_library_from_file(MtDevice* device, char* filepath, NsError* error)
+{
+      return [(id<MTLDevice>)device newLibraryWithFile: mtNSString(filepath) error:(NSError**)&error];
+}
+
+MT_EXPORT MT_API_AVAILABLE(mt_macos(10.11), mt_ios(8.0)) CF_RETURNS_RETAINED
+MtLibrary* mtl_new_library_from_source(MtDevice* device, char* source, MtCompileOptions* options, NsError** error)
+{
+    NSError *_err;
+    MtLibrary* lib = [(id<MTLDevice>)device
+        newLibraryWithSource: mtNSString(source)
+        options: (MTLCompileOptions*)options
+        error: &_err];
+
+    *error = _err;
+
+    return lib;
+}
+
+void mtl_new_event(MtDevice* device)
+{
+}
+
+void mtl_new_shared_event(MtDevice* device)
+{
+}
+
+void mtl_new_shared_event_with_handle(MtDevice* device, shared_event_handle)
+{
+}
+
+void mtl_new_fence(MtDevice* device)
+{
+}
+//
+//void mtl_device_get_recommended_max_working_set_size(MtDevice* device)
+//{
+//}
+
+//void mtl_device_get_current_allocated_size(MtDevice* device)
+//{
+//}
+
+//void mtl_device_get_max_thread_group_memory_length(MtDevice* device)
+//{
+//}
+
+//void mtl_device_get_max_threads_per_thread_group(MtDevice* device)
+//{
+//}
+

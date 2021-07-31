@@ -1,11 +1,11 @@
 const std = @import("std");
-//const glfw = @cImport({
-    //@cInclude("GLFW/glfw3.h");
-//});
+usingnamespace @cImport({
+    @cInclude("GLFW/glfw3.h");
+});
 const print = std.debug.print;
 const panic = std.debug.panic;
 const assert = std.debug.assert;
-const Metal = @import("metal.zig");
+const Metal = @import("metal/metal.zig");
 
 const InitializationError = error{GLFWInitError};
 fn init() InitializationError!void
@@ -32,10 +32,6 @@ fn create_window() CreateWindowError!?*glfw.GLFWwindow
 
 pub fn main() anyerror!void
 {
-    _ = Metal.Device.create_system_default() orelse
-    {
-        panic("Device couldn't be created\n", .{});
-    };
 
     //_ = main_function();
     //try init();

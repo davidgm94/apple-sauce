@@ -1,3 +1,4 @@
+const std = @import("std");
 const NS = @import("apple_glue/ns.zig");
 pub const objc = @import("apple_glue/objc.zig");
 
@@ -342,7 +343,7 @@ pub const LanguageVersion = enum(u32)
 
     @"2_0" = (2 << 16),
     @"2_1" = (2 << 16) + 1,
-    @"2_0" = (2 << 16) + 2,
+    @"2_2" = (2 << 16) + 2,
 };
 
 
@@ -556,15 +557,14 @@ pub const Resource = opaque
     {
         CPUCacheMode_default = @enumToInt(CPUCacheMode.default),
         CPUCacheMode_write_combined = @enumToInt(CPUCacheMode.write_combined),
+        StorageMode_managed = @enumToInt(StorageMode.managed) << 4,
+        StorageMode_private = @enumToInt(StorageMode.private) << 4,
+        StorageMode_memoryless = @enumToInt(StorageMode.memoryless) << 4,
 
-        StorageMode_shared = StorageMode.shared << 4,
-        StorageMode_managed = StorageMode.managed << 4,
-        StorageMode_private = StorageMode.private << 4,
-        StorageMode_memoryless = StorageMode.memoryless << 4,
-
-        HazardTrackingMode_default = HazardTrackingMode.default << 8,
-        HazardTrackingMode_untracked = HazardTrackingMode.untracked << 8,
-        HazardTrackingMode_tracked = HazardTrackingMode.tracked << 8,
+        HazardTrackingMode_untracked = @enumToInt(HazardTrackingMode.untracked) << 8,
+        HazardTrackingMode_tracked = @enumToInt(HazardTrackingMode.tracked) << 8,
+        const StorageMode_shared = @enumToInt(StorageMode.shared) << 4;
+        const HazardTrackingMode_default = @enumToInt(HazardTrackingMode.default) << 8;
     };
 
     pub const Usage = enum(u32)
@@ -682,12 +682,12 @@ pub const Device = opaque
         return objc.mtl_device_get_peer_index(self);
     }
 
-    pub fn supports_family(self: *Self) bool
+    pub fn supports_family(self: *Self, family: GPUFamily) bool
     {
         return objc.mtl_device_supports_gpu_family(self, family);
     }
 
-    pub fn supports_feature_set(self: *Self) bool
+    pub fn supports_feature_set(self: *Self, feature_set: FeatureSet) bool
     {
         return objc.mtl_device_supports_feature_set(self, feature_set);
     }
@@ -766,6 +766,10 @@ pub const Device = opaque
     {
         return objc.mtl_device_new_fence(self);
     }
+};
+
+pub const Fence = opaque
+{
 };
 
 pub const Event = opaque
@@ -866,9 +870,9 @@ pub const CompileOptions = opaque
         return objc.mtl_compile_options_get_fast_math_enabled(self);
     }
 
-    pub fn set_fast_math_enabled(self: *Self, fast_math_enabled: bool) bool
+    pub fn set_fast_math_enabled(self: *Self, fast_math_enabled: bool) void
     {
-        objc.mtl_compile_options_get_fast_math_enabled(self, fast_math_enabled);
+        objc.mtl_compile_options_set_fast_math_enabled(self, fast_math_enabled);
     }
 };
 
@@ -2299,4 +2303,7 @@ pub const CommandQueue = opaque
     }
 };
 
-
+comptime
+{
+    std.testing.refAllDecls(@This());
+}
